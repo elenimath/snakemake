@@ -7,10 +7,12 @@ import hashlib
 from pathlib import Path
 import re
 import os
+import shutil
 from snakemake import utils
 import tempfile
 import io
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 
 from snakemake.common import (
@@ -59,6 +61,10 @@ class SourceFile(ABC):
         if isinstance(path, SourceFile):
             path = path.get_path_or_uri()
         return self.__class__(smart_join(self.get_path_or_uri(), path))
+
+    def mtime(self):
+        """If possible, return mtime of the file. Otherwise, return None."""
+        return None
 
     def __hash__(self):
         return self.get_path_or_uri().__hash__()
@@ -110,6 +116,9 @@ class LocalSourceFile(SourceFile):
 
     def simplify_path(self):
         return utils.simplify_path(self.path)
+
+    def mtime(self):
+        return os.stat(self.path).st_mtime
 
     def __fspath__(self):
         return self.path
@@ -300,11 +309,6 @@ class SourceCache:
     def runtime_cache_path(self):
         return self._runtime_cache_path or self.runtime_cache.name
 
-    def lock_cache(self, entry):
-        from filelock import FileLock
-
-        return FileLock(entry.with_suffix(".lock"))
-
     def open(self, source_file, mode="r"):
         cache_entry = self._cache(source_file)
         return self._open(cache_entry, mode)
@@ -333,17 +337,30 @@ class SourceCache:
 
     def _cache(self, source_file):
         cache_entry = self._cache_entry(source_file)
-        with self.lock_cache(cache_entry):
-            if not cache_entry.exists():
-                self._do_cache(source_file, cache_entry)
+        if not cache_entry.exists():
+            self._do_cache(source_file, cache_entry)
         return cache_entry
 
     def _do_cache(self, source_file, cache_entry):
         # open from origin
-        with self._open(source_file.get_path_or_uri(), "rb") as source, open(
-            cache_entry, "wb"
-        ) as cache_source:
-            cache_source.write(source.read())
+        with self._open(source_file.get_path_or_uri(), "rb") as source:
+            tmp_source = tempfile.NamedTemporaryFile(
+                prefix=str(cache_entry),
+                delete=False,  # no need to delete since we move it below
+            )
+            tmp_source.write(source.read())
+            tmp_source.close()
+            # Atomic move to right name.
+            # This way we avoid the need to lock.
+            shutil.move(tmp_source.name, cache_entry)
+
+        mtime = source_file.mtime()
+        if mtime is not None:
+            # Set to mtime of original file
+            # In case we don't have that mtime, it is fine
+            # to just keep the time at the time of caching
+            # as mtime.
+            os.utime(cache_entry, times=(mtime, mtime))
 
     def _open(self, path_or_uri, mode):
         from smart_open import open

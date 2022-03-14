@@ -1,5 +1,86 @@
 # Changelog
 
+### [7.2.1](https://www.github.com/snakemake/snakemake/compare/v7.2.0...v7.2.1) (2022-03-14)
+
+
+### Bug Fixes
+
+* add missing report.templates.components module to setup.py ([cb4e3fe](https://www.github.com/snakemake/snakemake/commit/cb4e3feaa192ed9c53ddb7c965cb5b71297710c9))
+
+
+### Documentation
+
+* add install info of development (git) version to docs ([#1477](https://www.github.com/snakemake/snakemake/issues/1477)) ([2a2d6cd](https://www.github.com/snakemake/snakemake/commit/2a2d6cd15cf48278ff17470c7c1323e7ebc40bbd))
+
+## [7.2.0](https://www.github.com/snakemake/snakemake/compare/v7.1.1...v7.2.0) (2022-03-13)
+
+
+### Features
+
+* improved reports: more interactive and modern interface, ability to define a label based representation of files ([#1470](https://www.github.com/snakemake/snakemake/issues/1470)) ([d09df0c](https://www.github.com/snakemake/snakemake/commit/d09df0c6b02494829345f0af0fa8811007afa28b))
+
+
+### Bug Fixes
+
+* always deploy conda envs in main process when assuming a shared file system (fixes issue [#1463](https://www.github.com/snakemake/snakemake/issues/1463)) ([#1472](https://www.github.com/snakemake/snakemake/issues/1472)) ([79788eb](https://www.github.com/snakemake/snakemake/commit/79788eb5e8bd404e507ef7e54a0caa6103d90c4e))
+* do not wait for named or containerized conda envs ([#1473](https://www.github.com/snakemake/snakemake/issues/1473)) ([6b1d09c](https://www.github.com/snakemake/snakemake/commit/6b1d09c1e270348e8ef77d6ad8c24e1ca540215c))
+* implement lock-free source file caching. This avoids hangs on network file systems like NFS. ([#1464](https://www.github.com/snakemake/snakemake/issues/1464)) ([9520e98](https://www.github.com/snakemake/snakemake/commit/9520e988a32f0c5369b4f2c68fdb741f21daa1a4))
+
+### [7.1.1](https://www.github.com/snakemake/snakemake/compare/v7.1.0...v7.1.1) (2022-03-07)
+
+
+### Bug Fixes
+
+* quote jobid passed to status script to support multi-cluster Slurm setup ([#1459](https://www.github.com/snakemake/snakemake/issues/1459)) ([0232201](https://www.github.com/snakemake/snakemake/commit/023220160c6146810e3da2b277439441e8af9827))
+
+## [7.1.0](https://www.github.com/snakemake/snakemake/compare/v7.0.4...v7.1.0) (2022-03-04)
+
+
+### Features
+
+* Zenodo remote provider for transparent storage on and retrieval from Zenodo ([#1455](https://www.github.com/snakemake/snakemake/issues/1455)) ([4586ef7](https://www.github.com/snakemake/snakemake/commit/4586ef7c9e5945568e9994a013235574c24d582f))
+
+
+### Bug Fixes
+
+* disable mtime retrieval from github api for now. This quickly exceeds rate limits. ([1858bb9](https://www.github.com/snakemake/snakemake/commit/1858bb912823da2021f88a9c0cdabe1ee1083575))
+* display change warnings only for jobs that won't be executed otherwise ([086f60f](https://www.github.com/snakemake/snakemake/commit/086f60f142721a6085b105bc4bbe12cccc9cee02))
+* work around segfault with >100 jobs in google life sciences backend ([#1451](https://www.github.com/snakemake/snakemake/issues/1451)) ([2c0fee2](https://www.github.com/snakemake/snakemake/commit/2c0fee2faec33185ca7fcd2276901977857e2c64))
+
+### [7.0.4](https://www.github.com/snakemake/snakemake/compare/v7.0.3...v7.0.4) (2022-03-03)
+
+
+### Bug Fixes
+
+* more details on input and output exceptions (missing input, protected output, etc.) ([#1453](https://www.github.com/snakemake/snakemake/issues/1453)) ([8d64af2](https://www.github.com/snakemake/snakemake/commit/8d64af2cb905fef95585055c7b69fd1c45d44108))
+
+### [7.0.3](https://www.github.com/snakemake/snakemake/compare/v7.0.2...v7.0.3) (2022-03-02)
+
+
+### Bug Fixes
+
+* fix a bug leading to duplicate conda env initializations; fix display of jobs and output files with changes ([994b151](https://www.github.com/snakemake/snakemake/commit/994b1510766083df7f22d10c0e6e4bb65ffdd710))
+* preserve empty names input or output file lists in params or resource functions ([0d19ab0](https://www.github.com/snakemake/snakemake/commit/0d19ab0e6fcabe61b49d5ef9f2b293b9bcc06534))
+* remove accidental pdb statement ([9c935f1](https://www.github.com/snakemake/snakemake/commit/9c935f1566b976392393aeb00acf0e39eb159e19))
+* remove deprecated and add missing arguments to internal functions ([93a7e39](https://www.github.com/snakemake/snakemake/commit/93a7e39d9f225fac5ff5cb8cbe14500a09986ab3))
+
+### [7.0.2](https://www.github.com/snakemake/snakemake/compare/v7.0.1...v7.0.2) (2022-03-01)
+
+
+### Bug Fixes
+
+* add local marker for input files in cufflinks example. fixes issue [#1362](https://www.github.com/snakemake/snakemake/issues/1362) ([90bc88b](https://www.github.com/snakemake/snakemake/commit/90bc88b84282b477f481e368ad657056e131cbdc))
+* failure to properly apply default remote prefix in combination with the unpack marker ([#1448](https://www.github.com/snakemake/snakemake/issues/1448)) ([82666f1](https://www.github.com/snakemake/snakemake/commit/82666f1b2b043f0a8de739d7027aba66eccdaee3))
+* set mtime for cached source files [WIP] ([#1443](https://www.github.com/snakemake/snakemake/issues/1443)) ([dd27209](https://www.github.com/snakemake/snakemake/commit/dd27209b4a600d3704cabc39776dfef718129197))
+* small bug in snakemake.executors ([#1440](https://www.github.com/snakemake/snakemake/issues/1440)) ([6e64292](https://www.github.com/snakemake/snakemake/commit/6e64292cfa7d5bd9f6cb786681b3710ee51abc43))
+
+
+### Documentation
+
+* fix list display in docs ([3724367](https://www.github.com/snakemake/snakemake/commit/372436747a97496466b60dc60ee0ebe4cfef1016))
+* fix list display in docs ([2dd0e91](https://www.github.com/snakemake/snakemake/commit/2dd0e91f8b7e13d0ffcebe4ed11024a39357ebc7))
+* Fix typo and grammar mistake in scatter-gather section. ([#1441](https://www.github.com/snakemake/snakemake/issues/1441)) ([f218aaa](https://www.github.com/snakemake/snakemake/commit/f218aaad1b9b80074ea602cde0352c34c18e70b5))
+
 ### [7.0.1](https://www.github.com/snakemake/snakemake/compare/v7.0.0...v7.0.1) (2022-02-26)
 
 

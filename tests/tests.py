@@ -166,6 +166,17 @@ def test_cluster_cancelscript_nargs1():
     assert len(scancel_lines[1].split(" ")) == 2
 
 
+@skip_on_windows
+def test_cluster_statusscript_multi():
+    os.environ["TESTVAR"] = "test"
+    run(
+        dpath("test_cluster_statusscript_multi"),
+        snakefile="Snakefile.nonstandard",
+        cluster="./sbatch",
+        cluster_status="./status.sh",
+    )
+
+
 def test15():
     run(dpath("test15"))
 
@@ -1199,6 +1210,12 @@ def test_output_file_cache_remote():
         default_remote_provider="S3Mocked",
         default_remote_prefix="test-remote-bucket",
     )
+
+
+@connected
+@zenodo
+def test_remote_zenodo():
+    run(dpath("test_remote_zenodo"))
 
 
 def test_multiext():

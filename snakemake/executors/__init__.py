@@ -1020,11 +1020,11 @@ class GenericClusterExecutor(ClusterExecutor):
             while process.poll() is None and executor.wait:
                 buf = process.stdout.readline()
                 if buf:
-                    self.stdout.write(buf)
+                    sys.stdout.write(buf)
             # one final time ...
             buf = process.stdout.readline()
             if buf:
-                self.stdout.write(buf)
+                sys.stdout.write(buf)
 
         def wait(executor, process):
             while executor.wait:
@@ -1215,7 +1215,7 @@ class GenericClusterExecutor(ClusterExecutor):
                     if self.sidecar_vars:
                         env["SNAKEMAKE_CLUSTER_SIDECAR_VARS"] = self.sidecar_vars
                     ret = subprocess.check_output(
-                        "{statuscmd} {jobid}".format(
+                        "{statuscmd} '{jobid}'".format(
                             jobid=job.jobid, statuscmd=self.statuscmd
                         ),
                         shell=True,

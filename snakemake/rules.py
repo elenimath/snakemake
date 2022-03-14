@@ -55,7 +55,14 @@ from snakemake.exceptions import (
     IncompleteCheckpointException,
 )
 from snakemake.logging import logger
-from snakemake.common import Mode, ON_WINDOWS, lazy_property, TBDString
+from snakemake.common import (
+    Mode,
+    ON_WINDOWS,
+    get_function_params,
+    get_input_function_aux_params,
+    lazy_property,
+    TBDString,
+)
 import snakemake.io
 
 
@@ -594,6 +601,7 @@ class Rule:
                         self.workflow.current_basedir.join(report_obj.caption),
                         report_obj.category,
                         report_obj.subcategory,
+                        report_obj.labels,
                         report_obj.patterns,
                         report_obj.htmlindex,
                     )
@@ -719,17 +727,16 @@ class Rule:
             func = func._file.callable
         elif isinstance(func, AnnotatedString):
             func = func.callable
-        sig = inspect.signature(func)
 
-        _aux_params = {k: v for k, v in aux_params.items() if k in sig.parameters}
-
-        if "groupid" in sig.parameters:
+        if "groupid" in get_function_params(func):
             if groupid is not None:
-                _aux_params["groupid"] = groupid
+                aux_params["groupid"] = groupid
             else:
                 # Return empty list of files and incomplete marker
                 # the job will be reevaluated once groupids have been determined
                 return [], True
+
+        _aux_params = get_input_function_aux_params(func, aux_params)
 
         try:
             value = func(Wildcards(fromdict=wildcards), **_aux_params)
@@ -787,8 +794,6 @@ class Rule:
                     groupid=groupid,
                     **aux_params
                 )
-                if apply_path_modifier and not incomplete:
-                    item = self.apply_path_modifier(item, property=property)
 
             if is_unpack and not incomplete:
                 if not allow_unpack:
@@ -808,14 +813,14 @@ class Rule:
                     )
                 # Allow streamlined code with/without unpack
                 if isinstance(item, list):
-                    pairs = zip([None] * len(item), item)
+                    pairs = zip([None] * len(item), item, [_is_callable] * len(item))
                 else:
                     assert isinstance(item, dict)
-                    pairs = item.items()
+                    pairs = [(name, item, _is_callable) for name, item in item.items()]
             else:
-                pairs = [(name, item)]
+                pairs = [(name, item, _is_callable)]
 
-            for name, item in pairs:
+            for name, item, from_callable in pairs:
                 is_iterable = True
                 if not_iterable(item) or no_flattening:
                     item = [item]
@@ -827,8 +832,12 @@ class Rule:
                         and not isinstance(item_, Path)
                     ):
                         raise WorkflowError(
-                            "Function did not return str or list " "of str.", rule=self
+                            "Function did not return str or list of str.", rule=self
                         )
+
+                    if from_callable and apply_path_modifier and not incomplete:
+                        item_ = self.apply_path_modifier(item_, property=property)
+
                     concrete = concretize(item_, wildcards, _is_callable)
                     newitems.append(concrete)
                     if mapping is not None:
@@ -877,9 +886,6 @@ class Rule:
                 groupid=groupid,
             )
         except WildcardError as e:
-            import pdb
-
-            pdb.set_trace()
             raise WildcardError(
                 "Wildcards in input files cannot be " "determined from output files:",
                 str(e),

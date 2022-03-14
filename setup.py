@@ -37,10 +37,16 @@ setup(
     zip_safe=False,
     license="MIT",
     url="https://snakemake.readthedocs.io",
+    project_urls={
+        "Source": "https://github.com/snakemake/snakemake",
+    },
     packages=[
         "snakemake",
         "snakemake.remote",
         "snakemake.report",
+        "snakemake.report.template",
+        "snakemake.report.template.components",
+        "snakemake.report.data",
         "snakemake.common",
         "snakemake.caching",
         "snakemake.deployment",
@@ -56,7 +62,7 @@ setup(
             "snakemake-bash-completion = snakemake:bash_completion",
         ]
     },
-    package_data={"": ["*.css", "*.sh", "*.html", "*.jinja2"]},
+    package_data={"": ["*.css", "*.sh", "*.html", "*.jinja2", "*.js", "*.svg"]},
     install_requires=[
         "wrapt",
         "requests",
@@ -74,7 +80,6 @@ setup(
         "connection_pool >=0.0.3",
         "pulp >=2.0",
         "smart_open >=3.0",
-        "filelock",
         "stopit",
         "tabulate",
         "yte >=1.0,<2.0",
@@ -82,7 +87,7 @@ setup(
         "retry",
     ],
     extras_require={
-        "reports": ["jinja2", "networkx", "pygments", "pygraphviz"],
+        "reports": ["jinja2", "pygments"],
         "messaging": ["slacker"],
         "google-cloud": [
             "oauth2client",

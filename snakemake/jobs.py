@@ -703,7 +703,7 @@ class Job(AbstractJob):
     def check_protected_output(self):
         protected = list(filter(lambda f: f.protected, self.expanded_output))
         if protected:
-            raise ProtectedOutputException(self.rule, protected)
+            raise ProtectedOutputException(self, protected)
 
     def remove_existing_output(self):
         """Clean up both dynamic and regular output before rules actually run"""
@@ -1015,7 +1015,10 @@ class Job(AbstractJob):
             self.dag.workflow.use_conda
             and self.conda_env
             and not self.conda_env.is_named
+            and not self.conda_env.is_containerized
         ):
+            # Named or containerized envs are not present on the host FS,
+            # hence we don't need to wait for them.
             wait_for_files.append(self.conda_env.address)
         return wait_for_files
 
@@ -1179,20 +1182,9 @@ class GroupJob(AbstractJob):
         from toposort import toposort
 
         if self.toposorted is None:
-
-            def get_dependencies(job):
-                for dep, files in self.dag.dependencies[job].items():
-                    if dep in self.jobs:
-                        yield dep
-                        if any(is_flagged(f, "pipe") for f in files):
-                            # In case of a pipe, inherit the dependencies of the producer,
-                            # such that the two jobs end up on the same toposort level.
-                            # This is important because they are executed simulataneously.
-                            yield from get_dependencies(dep)
-
-            dag = {job: set(get_dependencies(job)) for job in self.jobs}
-
-            self.toposorted = list(toposort(dag))
+            self.toposorted = list(
+                self.dag.toposorted(jobs=self.jobs, inherit_pipe_dependencies=True)
+            )
 
     @property
     def all_products(self):

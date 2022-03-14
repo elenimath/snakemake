@@ -280,8 +280,9 @@ class DAG:
         env_set = {
             (job.conda_env_spec, job.container_img_url)
             for job in jobs
-            if job.conda_env_spec and (self.workflow.run_local or job.is_local)
+            if job.conda_env_spec and (self.workflow.assume_shared_fs or job.is_local)
         }
+
         # Then based on md5sum values
         self.conda_envs = dict()
         for (env_spec, simg_url) in env_set:
@@ -515,7 +516,7 @@ class DAG:
             if (f.is_directory and not f.remote_object and not os.path.isdir(f)) or (
                 not f.remote_object and os.path.isdir(f) and not f.is_directory
             ):
-                raise ImproperOutputException(job.rule, [f])
+                raise ImproperOutputException(job, [f])
 
         # It is possible, due to archive expansion or cluster clock skew, that
         # the files appear older than the input.  But we know they must be new,
@@ -920,7 +921,7 @@ class DAG:
 
         if missing_input:
             self.delete_job(job, recursive=False)  # delete job from tree
-            raise MissingInputException(job.rule, missing_input)
+            raise MissingInputException(job, missing_input)
 
         if skip_until_dynamic:
             self._dynamic.add(job)
@@ -1781,7 +1782,7 @@ class DAG:
         for job in self.targetjobs:
             build_ruledag(job)
 
-        return self._dot(dag.keys(), print_wildcards=False, print_types=False, dag=dag)
+        return self._dot(dag.keys())
 
     def rule_dot(self):
         graph = defaultdict(set)
@@ -2234,10 +2235,32 @@ class DAG:
         yield tabulate(rows, headers="keys")
         yield ""
 
-    def get_outputs_with_changes(self, change_type):
+    def toposorted(self, jobs=None, inherit_pipe_dependencies=False):
+        from toposort import toposort
+
+        if jobs is None:
+            jobs = set(self.jobs)
+
+        def get_dependencies(job):
+            for dep, files in self.dependencies[job].items():
+                if dep in jobs:
+                    yield dep
+                    if inherit_pipe_dependencies and any(
+                        is_flagged(f, "pipe") for f in files
+                    ):
+                        # In case of a pipe, inherit the dependencies of the producer,
+                        # such that the two jobs end up on the same toposort level.
+                        # This is important because they are executed simulataneously.
+                        yield from get_dependencies(dep)
+
+        dag = {job: set(get_dependencies(job)) for job in jobs}
+
+        return toposort(dag)
+
+    def get_outputs_with_changes(self, change_type, include_needrun=True):
         is_changed = lambda job: (
             getattr(self.workflow.persistence, f"{change_type}_changed")(job)
-            if not job.is_group()
+            if not job.is_group() and (include_needrun or not self.needrun(job))
             else []
         )
         changed = list(chain(*map(is_changed, self.jobs)))
@@ -2250,7 +2273,9 @@ class DAG:
     def warn_about_changes(self, quiet=False):
         if not quiet:
             for change_type in ["code", "input", "params"]:
-                changed = self.get_outputs_with_changes(change_type)
+                changed = self.get_outputs_with_changes(
+                    change_type, include_needrun=False
+                )
                 if changed:
                     rerun_trigger = ""
                     if not ON_WINDOWS:
